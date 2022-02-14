@@ -14,7 +14,7 @@ term = blessed.Terminal()
 letterDict = text.lettersDict
 
 
-class box:
+class Box:
     '''A class to handle the drawing of 20x10 ASCII Boxes
     These are the analogue of the Wordle "boxes"
     
@@ -79,7 +79,7 @@ class Wordle:
         print(term.clear)
         self.drawWords('WORDLEBUTWORSE', (160,20), term.white) #a nice title!
 
-        self.boxGrid = [[ box([180+(21*i), 30+(11*j)]) for i in range(0,5) ] for j in range(0,6)]
+        self.boxGrid = [[ Box([180+(21*i), 30+(11*j)]) for i in range(0,5) ] for j in range(0,6)]
         self.drawCanvas()
 
         
@@ -324,11 +324,12 @@ class Wordle:
                         self.removeLetter(self.inputArr)
                         continue
 
-                    if keyName.upper() in letterDict: #Input sanitation
+                    elif keyName.upper() in letterDict: #Input sanitation
                         self.inputArr.append(keyName.upper())
                         self.drawLetterBox(letterDict[keyName.upper()].split('\n'), calculatePos(len(self.inputArr[0:5]) - 1, self.curRow), term.grey8) #push them to next box
                         continue
                     
+                    self.inputArr.append(keyName)
                     self.inputArr.pop() #prevents usage of non-alpha keys
                         
             guess = ''.join(self.inputArr)[0:5]
