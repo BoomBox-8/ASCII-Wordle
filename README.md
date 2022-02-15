@@ -7,7 +7,7 @@ A near-feature complete version of the famous game, Wordle that can be played in
 
 # Requirements
 
-ASCII-Wordle requires just the Python Standard Library, Blessed, curses (blessed uses curses to handle input), json, pyperclip, random, time and your time!
+ASCII-Wordle requires just the Python Standard Library, Blessed, curses (blessed uses curses to handle input), and pyperclip!
 
 # Features
 
