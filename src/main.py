@@ -2,13 +2,14 @@
 The main file that allows one to run Ascii-Wordle
 Contains the functions and objects used to run the game'''
 
-import blessed
 import json
-import pyperclip
 import random
 import time
-import text
 
+import blessed
+import pyperclip
+
+import text
 
 term = blessed.Terminal()
 letterDict = text.lettersDict
@@ -72,18 +73,7 @@ class Wordle:
         Current active "row" of input'''
 
     def __init__(self):
-        block = input('''
-        Maximize your window, set the font size low enough. Press enter to start!
-        Do NOT resize your window during gameplay
-        ''')
-        print(term.clear)
-        self.drawWords('WORDLEBUTWORSE', (160,20), term.white) #a nice title!
-
-        self.boxGrid = [[ Box([180+(21*i), 30+(11*j)]) for i in range(0,5) ] for j in range(0,6)]
-        self.drawCanvas()
-
         
-
         with open('wordList.json', 'r') as textFile:
             wordList = json.load(textFile)
             self.secretWord = random.choice(wordList[0])
@@ -94,6 +84,25 @@ class Wordle:
         self.curRow  = 0
         
     
+    def setup(self) -> None:
+        '''Sets up the game "screen"
+        
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        None'''
+        block = input('''
+        Maximize your window, set the font size low enough. Press enter to start!
+        Do NOT resize your window during gameplay
+        ''')
+        print(term.clear)
+        self.drawWords('WORDLEBUTWORSE', (160,20), term.white) #a nice title!
+
+        self.boxGrid = [[ Box([180+(21*i), 30+(11*j)]) for i in range(0,5) ] for j in range(0,6)] #draw all boxes with one pixel of spacing on both axes btw boxes
+        self.drawCanvas()
+
 
     def drawCanvas(self) -> None:
         '''Draws all 6 rows of boxes on screen
@@ -106,7 +115,7 @@ class Wordle:
 
         for i  in self.boxGrid:
             for j in i:
-                j.draw(term.grey8)
+                j.draw(color = term.grey8)
 
 
     def drawLetterBox(self, letter : list, gridVal : tuple, color : str) -> None:
@@ -217,23 +226,23 @@ class Wordle:
         for index, char in enumerate(guess):
 
             if char == self.secretWord[index] and self.loopCount[char] > 0:
-                self.boxGrid[self.curRow][index].draw(term.chartreuse3, 0.01)
+                self.boxGrid[self.curRow][index].draw(color = term.chartreuse3, sleep = 0.01)
                     
-                self.drawLetterBox(letterDict[char].split('\n'), calculatePos(index, self.curRow), term.chartreuse3)
+                self.drawLetterBox(letterDict[char].split('\n'), calculatePos(index, self.curRow), color = term.chartreuse3)
                 self.loopCount[char] -= 1
                 self.corrects[self.curRow] += '🟩'
             
             elif char in self.secretWord and self.loopCount[char] > 0:
-                self.boxGrid[self.curRow][index].draw(term.gold2, 0.01)
+                self.boxGrid[self.curRow][index].draw(color = term.gold2, sleep = 0.01)
 
-                self.drawLetterBox(letterDict[char].split('\n'), calculatePos(index, self.curRow), term.gold2)
+                self.drawLetterBox(letterDict[char].split('\n'), calculatePos(index, self.curRow), color = term.gold2)
                 self.loopCount[char] -= 1
                 self.corrects[self.curRow] += '🟨'
             
             else:
-                self.boxGrid[self.curRow][index].draw(term.grey23, 0.01)
+                self.boxGrid[self.curRow][index].draw(color = term.grey23, sleep = 0.01)
 
-                self.drawLetterBox(letterDict[char].split('\n'), calculatePos(index, self.curRow), term.grey23)
+                self.drawLetterBox(letterDict[char].split('\n'), calculatePos(index, self.curRow), color = term.grey23)
                 self.corrects[self.curRow] += '⬛'
 
 
@@ -306,31 +315,35 @@ class Wordle:
             self.loopCount = self.count.copy() #lighter than recalculating every loop
 
             with term.cbreak(): #context manager to allow for "live-input"
-                key = '' #declaration
+                key = '' 
                 self.inputArr = []
 
                 while repr(key) != 'KEY_ENTER':
                     
                     key = term.inkey()
-                    keyName = key.name if key.is_sequence else key #handles getting keyname for both regular keys and keys like CTRL,ENTER, etc
+                    keyName = (key.name if key.is_sequence else key).upper() #handles getting keyname for both regular keys and keys like CTRL,ENTER, etc
 
-                    if key.name == 'KEY_ENTER':
+                    if keyName == 'KEY_ENTER':
                         self.drawWords('################', (160,100), term.black)
                         key = self.evaluateError(key)
                             
                         continue
                         
-                    elif key.name == 'KEY_BACKSPACE':
+                    elif keyName == 'KEY_BACKSPACE':
                         self.removeLetter(self.inputArr)
                         continue
 
-                    elif keyName.upper() in letterDict: #Input sanitation
-                        self.inputArr.append(keyName.upper())
-                        self.drawLetterBox(letterDict[keyName.upper()].split('\n'), calculatePos(len(self.inputArr[0:5]) - 1, self.curRow), term.grey8) #push them to next box
+                    elif keyName in letterDict: #Input sanitation
+                        self.inputArr.append(keyName)
+
+                        self.drawLetterBox(
+                        letterDict[keyName].split('\n'), 
+                        calculatePos(len(self.inputArr[0:5]) - 1, self.curRow),
+                        color = term.grey8) #push them to next box
+
                         continue
                     
-                    self.inputArr.append(keyName)
-                    self.inputArr.pop() #prevents usage of non-alpha keys
+
                         
             guess = ''.join(self.inputArr)[0:5]
             self.evaluateInput(guess)
@@ -361,7 +374,7 @@ class Wordle:
         ]
 
         self.drawWords(winRemark[self.curRow], (160 + (30 - len(winRemark[self.curRow])),100), term.white)
-        pyperclip.copy(f"Wordle {self.curRow+1}/6{chr(10)}{chr(10).join(self.corrects)}") #have to center stuff later
+        pyperclip.copy(f"Wordle {self.curRow}/6{chr(10)}{chr(10).join(self.corrects)}") #have to center stuff later
         stop = input() #prevents program from closing upon completion
 
 
@@ -393,6 +406,7 @@ def main() -> None:
     None'''
 
     game = Wordle()
+    game.setup()
     game.gameLoop()
 
 
